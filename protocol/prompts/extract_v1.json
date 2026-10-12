@@ -1,0 +1,160 @@
+{
+"schema_version": "extraction_v1",
+"paper": {
+"arxiv_id": "2101.11923",
+"arxiv_version": "v1",
+"doi": null,
+"source_url": null,
+"pdf_sha256_hex": null,
+"page_count": 17,
+"declared_scope": {
+"included_pages": [[1, 16]],
+"excluded": [{"range": [17, 17], "reason": "references"}]
+}
+},
+"source_coverage": [
+{"page": 1, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 2, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 3, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 4, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 5, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 6, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 7, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 8, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 9, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 10, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 11, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 12, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 13, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 14, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 15, "status": "INSPECTED_WITH_CONTENT"},
+{"page": 16, "status": "INSPECTED_WITH_CONTENT"}
+],
+"items": [
+{
+"item_id": "it_001",
+"kind": "equation",
+"label": "(1)",
+"latex": "S[x(t)]=-mc\int dt\sqrt{|g_{\mu\nu}\dot{x}^{\mu}\dot{x}^{\nu}|}",
+"pages": [1],
+"passage": "S[x(t)]=-mc\int dt\sqrt{|g_{\mu\nu}\dot{x}^{\mu}\dot{x}^{\nu}|}",
+"inferred": false,
+"capture_status": "CAPTURED",
+"compiler_status": "UNSUPPORTED",
+"test_status": "NOT_RUN",
+"math_shape": "other_unsupported",
+"unsupported_reason": "integration",
+"confidence": 1.0
+},
+{
+"item_id": "it_002",
+"kind": "equation",
+"label": "(4)",
+"latex": "ds^{2}=-c^{2}dt^{2}+dx^{2}+dy^{2}+dz^{2}",
+"pages": [4],
+"passage": "ds^{2}=-c^{2}dt^{2}+dx^{2}+dy^{2}+dz^{2}",
+"inferred": false,
+"capture_status": "CAPTURED",
+"compiler_status": "SUPPORTED",
+"test_status": "NOT_RUN",
+"math_shape": "canon",
+"unsupported_reason": null,
+"confidence": 1.0
+},
+{
+"item_id": "it_003",
+"kind": "equation",
+"label": "(7)",
+"latex": "ds^{2}=-\overline{x}^{2}d\tau^{2}+d\overline{x}^{2}+dy^{2}+dz^{2}",
+"pages": [4],
+"passage": "ds^{2}=-\overline{x}^{2}d\tau^{2}+d\overline{x}^{2}+dy^{2}+dz^{2}",
+"inferred": false,
+"capture_status": "CAPTURED",
+"compiler_status": "SUPPORTED",
+"test_status": "NOT_RUN",
+"math_shape": "canon",
+"unsupported_reason": null,
+"confidence": 1.0
+},
+{
+"item_id": "it_004",
+"kind": "equation",
+"label": "(15)",
+"latex": "u_{box}^{a}=\cosh~\tau\partial_{ct}^{a}+sinh~\tau\partial_{x}^{a}=\gamma(\tau)\partial_{ct}^{a}+\gamma(\tau)\beta(\tau)\partial_{x}^{a}",
+"pages": [5],
+"passage": "u_{box}^{a}=cosh~\tau\partial_{ct}^{a}+sinh~\tau\partial_{x}^{a} =\gamma(\tau)\partial_{ct}^{a}+\gamma(\tau)\beta(\tau)\partial_{x}^{a}",
+"inferred": false,
+"capture_status": "CAPTURED",
+"compiler_status": "SUPPORTED",
+"test_status": "NOT_RUN",
+"math_shape": "canon",
+"unsupported_reason": null,
+"confidence": 1.0
+},
+{
+"item_id": "it_005",
+"kind": "equation",
+"label": "(24)",
+"latex": "E_{box}(\tau)=\gamma(\tau)\int_{\Sigma_{\tau}}\frac{c^{2}}{\overline{x}^{2}}T_{\tau\tau}d\overline{x}dydz",
+"pages": [7],
+"passage": "E_{box}(\tau)=\gamma(\tau)\int_{\Sigma_{\tau}}\frac{c^{2}}{\overline{x}^{2}}T_{\tau\tau}d\overline{x}dydz",
+"inferred": false,
+"capture_status": "CAPTURED",
+"compiler_status": "UNSUPPORTED",
+"test_status": "NOT_RUN",
+"math_shape": "other_unsupported",
+"unsupported_reason": "integration",
+"confidence": 1.0
+},
+{
+"item_id": "it_006",
+"kind": "equation",
+"label": "(30)",
+"latex": "E_{box}(v)=\gamma(v)E_{box}(0)",
+"pages": [8],
+"passage": "E_{box}(v)=\gamma(v)E_{box}(0)",
+"inferred": false,
+"capture_status": "CAPTURED",
+"compiler_status": "SUPPORTED",
+"test_status": "NOT_RUN",
+"math_shape": "canon",
+"unsupported_reason": null,
+"confidence": 1.0
+},
+{
+"item_id": "it_007",
+"kind": "equation",
+"label": "(32)",
+"latex": "E_{box}(0)=mc^{2}",
+"pages": [8],
+"passage": "E_{box}(0)=mc^{2}",
+"inferred": false,
+"capture_status": "CAPTURED",
+"compiler_status": "SUPPORTED",
+"test_status": "NOT_RUN",
+"math_shape": "canon",
+"unsupported_reason": null,
+"confidence": 1.0
+}
+],
+"relations": [
+{
+"from": "it_005",
+"to": "it_006",
+"rel": "derives",
+"required": true
+},
+{
+"from": "it_006",
+"to": "it_007",
+"rel": "derives",
+"required": true
+}
+],
+"ambiguities": [],
+"model_provenance": {
+"model": "Gemini",
+"prompt_version": "extract_v1",
+"extraction_version": "rev0"
+}
+}

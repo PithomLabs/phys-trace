@@ -1,0 +1,138 @@
+{
+"schema_version": "extraction_v2",
+"paper": {
+"arxiv_id": "2101.11923",
+"arxiv_version": null,
+"doi": null,
+"source_url": null,
+"pdf_sha256_hex": null,
+"page_count": 17,
+"declared_scope": {
+"included_pages": [[1, 16]],
+"excluded": [{"range": [17, 17], "reason": "references"}]
+}
+},
+"source_coverage": [
+{"page": 1, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 2, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 3, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 4, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 5, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 6, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 7, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 8, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 9, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 10, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 11, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 12, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 13, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 14, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 15, "status": "INSPECTED_WITH_CONTENT", "note": null},
+{"page": 16, "status": "INSPECTED_WITH_CONTENT", "note": null}
+],
+"core_ideas": [
+{
+"idea_id": "K1",
+"claim": "Mass-energy equivalence is derived directly from the field equations and stress-energy tensor conservation of stationary massless radiation confined inside an idealized accelerating box.",
+"distinctness": "Provides a direct dynamical link between the stress-energy tensor of fundamental massless fields and the inertial mass of a composite particle model, independent of particle kinematics or symmetry-based free-particle actions.",
+"source_regions": ["Sec. IV, pp. 5-8", "Sec. V, pp. 8-9"],
+"scope_assumptions": ["it_a1"],
+"derivation_unit_id": "D1"
+}
+],
+"derivation_units": [
+{
+"unit_id": "D1",
+"idea_id": "K1",
+"intended_conclusion": "E_{box}(0) = mc^2",
+"assumptions": ["it_a1"],
+"definitions": ["it_d1"],
+"steps": [
+{
+"step_id": "s1",
+"items": ["it_001"],
+"depends_on": ["it_d1"],
+"required": true,
+"status": "SUPPORTED",
+"reason": null
+}
+],
+"source_refs": [
+{
+"items": ["it_001"],
+"pages": [8],
+"labels": ["(32)"],
+"passage": "E_{box}(0)=mc^{2}"
+}
+],
+"execution_obligations": [],
+"limitations": [
+"tensor divergence and space-time integral steps require external evaluation tools"
+]
+}
+],
+"items": [
+{
+"item_id": "it_a1",
+"unit_id": "D1",
+"kind": "assumption",
+"label": "unlabeled-1",
+"latex": null,
+"pages": [1],
+"passage": "The only assumptions in the derivation are that the field equations hold and the energy-momentum tensor admits a universal interpretation in arbitrary coordinate systems.",
+"inferred": false,
+"capture_status": "CAPTURED",
+"compiler_status": "NOT_APPLICABLE",
+"test_status": "NOT_RUN",
+"math_shape": "canon",
+"unsupported_reason": null,
+"confidence": 1.0
+},
+{
+"item_id": "it_d1",
+"unit_id": "D1",
+"kind": "definition",
+"label": "(18)",
+"latex": "j_{a}^{lab}\equiv-T_{ab}\xi_{lab}^{b}",
+"pages": [5],
+"passage": "j_{a}^{lab}\equiv-T_{ab}\xi_{lab}^{b}",
+"inferred": false,
+"capture_status": "CAPTURED",
+"compiler_status": "SUPPORTED",
+"test_status": "NOT_RUN",
+"math_shape": "canon",
+"unsupported_reason": null,
+"confidence": 1.0
+},
+{
+"item_id": "it_001",
+"unit_id": "D1",
+"kind": "equation",
+"label": "(32)",
+"latex": "E_{box}(0)=mc^{2}",
+"pages": [8],
+"passage": "E_{box}(0)=mc^{2}",
+"inferred": false,
+"capture_status": "CAPTURED",
+"compiler_status": "SUPPORTED",
+"test_status": "NOT_RUN",
+"math_shape": "canon",
+"unsupported_reason": null,
+"confidence": 1.0
+}
+],
+"relations": [
+{
+"from": "it_d1",
+"to": "it_001",
+"rel": "derives",
+"required": true
+}
+],
+"ambiguities": [],
+"model_provenance": {
+"model": "Gemini",
+"prompt_version": "extract_v2",
+"extraction_version": "rev0"
+}
+}
