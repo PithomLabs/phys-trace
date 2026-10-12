@@ -1,0 +1,41 @@
+{
+"schema_version": "review_v1",
+"prompt_version": "review_v1",
+"candidate_digest": "8f3b2c1a0e9d8c7b6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c9b8a7f6e5d4c3b",
+"verdict": "REJECT",
+"findings": [
+{
+"finding_id": "f_001",
+"severity": "omission",
+"item_id_or_page": "p.2",
+"description": "Equation (2) defining the photon hit time t_1 is completely omitted from the candidate inventory.",
+"proposed_correction": "Add equation (2) item with label '(2)' and correct LaTeX representation."
+},
+{
+"finding_id": "f_002",
+"severity": "omission",
+"item_id_or_page": "p.3",
+"description": "Equation (3) defining the average force F in the heuristic section is omitted.",
+"proposed_correction": "Add equation (3) item with label '(3)'."
+},
+{
+"finding_id": "f_003",
+"severity": "omission",
+"item_id_or_page": "p.4",
+"description": "Equations (5) and (6) representing the Killing equation and Rindler coordinate transformations are omitted.",
+"proposed_correction": "Add items for equations (5) and (6)."
+},
+{
+"finding_id": "f_004",
+"severity": "omission",
+"item_id_or_page": "p.9-17",
+"description": "All equations in Appendices A, B, and C (equations A1 through C8) are omitted from the candidate inventory.",
+"proposed_correction": "Add comprehensive capture of all appendix equations and their dependencies."
+}
+],
+"unsupported_confirmations": [
+"it_001",
+"it_005"
+],
+"notes": "The candidate inventory suffers from severe and systematic omissions, capturing only 7 equations out of dozens present across the 16 inspected pages, completely missing foundational definitions in Sections II and III as well as the entire technical apparatus of Appendices A, B, and C."
+}

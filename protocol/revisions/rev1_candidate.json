@@ -1,0 +1,342 @@
+{
+  "schema_version": "extraction_v2",
+  "paper": {
+    "arxiv_id": "2101.11923",
+    "arxiv_version": "v1",
+    "doi": null,
+    "source_url": "https://arxiv.org/abs/2101.11923",
+    "pdf_sha256_hex": null,
+    "page_count": 17,
+    "declared_scope": {
+      "included_pages": [[1, 16]],
+      "excluded": [
+        {"range": [17, 17], "reason": "references"},
+        {"range": [2, 3], "reason": "Section II photon heuristic: motivation, not a core idea (explicitly excluded from derivation units)"},
+        {"range": [15, 16], "reason": "Appendices B and C alternative work-based routes excluded from revision 1; Appendix A remainder beyond D1 boundary/flux needs excluded"}
+      ]
+    }
+  },
+  "source_coverage": [
+    {"page": 1, "status": "INSPECTED_WITH_CONTENT", "note": "abstract, intro, action (1)"},
+    {"page": 2, "status": "INSPECTED_WITH_CONTENT", "note": "Sec. II heuristic (excluded as motivation)"},
+    {"page": 3, "status": "INSPECTED_WITH_CONTENT", "note": "Sec. II heuristic (excluded as motivation)"},
+    {"page": 4, "status": "INSPECTED_WITH_CONTENT", "note": "Sec. III Rindler setup"},
+    {"page": 5, "status": "INSPECTED_WITH_CONTENT", "note": "Sec. III-IV boundary, current definition"},
+    {"page": 6, "status": "INSPECTED_WITH_CONTENT", "note": "Sec. IV energy content"},
+    {"page": 7, "status": "INSPECTED_WITH_CONTENT", "note": "Sec. IV stationarity, conserved integral"},
+    {"page": 8, "status": "INSPECTED_WITH_CONTENT", "note": "Sec. IV transformation/limit; Sec. V scalar start"},
+    {"page": 9, "status": "INSPECTED_WITH_CONTENT", "note": "Sec. V scalar; Appendix A start"},
+    {"page": 10, "status": "INSPECTED_WITH_CONTENT", "note": "Appendix A Maxwell in accelerated frame"},
+    {"page": 11, "status": "INSPECTED_WITH_CONTENT", "note": "Appendix A, Gauss/Ampere laws"},
+    {"page": 12, "status": "INSPECTED_WITH_CONTENT", "note": "Appendix A boundary consequences"},
+    {"page": 13, "status": "INSPECTED_WITH_CONTENT", "note": "Appendix A boundary field/tensor (A28-A37)"},
+    {"page": 14, "status": "INSPECTED_WITH_CONTENT", "note": "Appendix A covariant derivation"},
+    {"page": 15, "status": "INSPECTED_WITH_CONTENT", "note": "Appendix A end; Appendix B work route (excluded)"},
+    {"page": 16, "status": "INSPECTED_WITH_CONTENT", "note": "Appendices B/C work routes (excluded); scalar C8 region noted"}
+  ],
+  "core_ideas": [
+    {
+      "idea_id": "K1",
+      "claim": "Mass-energy equivalence follows directly from the field equations and stress-energy conservation of stationary Maxwell radiation confined in an accelerating box.",
+      "distinctness": "Single coherent field-theoretic argument from geometry plus conservation to inertia; the energy transformation and the mass identification are stages of one proof, not separate ideas.",
+      "source_regions": ["Sec. III, pp. 4-5", "Sec. IV, pp. 5-8", "Appendix A boundary/flux portions, pp. 10-14"],
+      "scope_assumptions": ["it_a1", "it_a2"],
+      "derivation_unit_id": "D1"
+    },
+    {
+      "idea_id": "K2",
+      "claim": "The same construction extends to massless scalar radiation, supporting the argument's broader applicability.",
+      "distinctness": "Applies the K1 pattern to a different field model with its own field equation and boundary conditions; independently meaningful as a universality check.",
+      "source_regions": ["Sec. V, pp. 8-9"],
+      "scope_assumptions": ["it_a1"],
+      "derivation_unit_id": "D2"
+    }
+  ],
+  "derivation_units": [
+    {
+      "unit_id": "D1",
+      "idea_id": "K1",
+      "intended_conclusion": "E_{box}(0) = mc^2 for confined Maxwell radiation",
+      "assumptions": ["it_a1", "it_a2"],
+      "definitions": ["it_d1"],
+      "steps": [
+        {"step_id": "s1", "items": ["it_m4", "it_m6", "it_m7"],
+         "depends_on": [], "required": true,
+         "status": "UNSUPPORTED", "reason": "tensor_calculus",
+         "note": "Rindler setup: Minkowski metric (4), transforms (6), Rindler metric (7); coordinate/differential structures unrepresentable in 7-rule baseline"},
+        {"step_id": "s2", "items": ["it_d1", "it_e19"],
+         "depends_on": ["s1"], "required": true,
+         "status": "UNSUPPORTED", "reason": "integration",
+         "note": "Lab-frame current definition (18) plus energy content integral (19)-(21); hypersurface integral unexecutable"},
+        {"step_id": "s3", "items": ["it_e23"],
+         "depends_on": ["s2"], "required": true,
+         "status": "UNSUPPORTED", "reason": "tensor_calculus",
+         "note": "Stationarity: vanishing total momentum (23); contracted tensor integral"},
+        {"step_id": "s4", "items": ["it_e24", "it_e28", "it_a28"],
+         "depends_on": ["s3"], "required": true,
+         "status": "UNSUPPORTED", "reason": "integration",
+         "note": "Conserved energy integral (24)-(29) with boundary-flux reasoning (27)-(28); App. A perfectly-conducting-wall results (A28/A29) inside this step"},
+        {"step_id": "s5", "items": ["it_e30"],
+         "depends_on": ["s4"], "required": true,
+         "status": "SUPPORTED", "reason": null,
+         "note": "Energy transformation E_box(v)=gamma E_box(0); plain algebra over prior result"},
+        {"step_id": "s6", "items": ["it_001"],
+         "depends_on": ["s5"], "required": true,
+         "status": "SUPPORTED", "reason": null,
+         "note": "Nonrelativistic limit plus correspondence gives E_box(0)=mc^2; algebraic shape only, does not verify the chain"}
+      ],
+      "source_refs": [
+        {"items": ["it_m4", "it_m6", "it_m7"], "pages": [4], "labels": ["(4)", "(6)", "(7)"], "passage": "Rindler coordinate setup of Sec. III"},
+        {"items": ["it_d1", "it_e19"], "pages": [5, 6], "labels": ["(18)", "(19)"], "passage": "lab-frame current and box energy content"},
+        {"items": ["it_e23"], "pages": [7], "labels": ["(23)"], "passage": "vanishing total momentum stationarity condition"},
+        {"items": ["it_e24", "it_e28"], "pages": [7, 8], "labels": ["(24)", "(28)"], "passage": "conserved energy integral and flux argument"},
+        {"items": ["it_a28"], "pages": [12, 13], "labels": ["(A28)", "(A29)"], "passage": "vanishing field in conductor; wall flux condition"},
+        {"items": ["it_e30"], "pages": [8], "labels": ["(30)"], "passage": "E_{box}(v)=gamma(v)E_{box}(0)"},
+        {"items": ["it_001"], "pages": [8], "labels": ["(32)"], "passage": "E_{box}(0)=mc^{2}"}
+      ],
+      "execution_obligations": ["s5", "s6"],
+      "limitations": [
+        "Steps s1-s4 require tensor calculus, covariant derivatives, and hypersurface integration beyond the 7-rule baseline",
+        "Supported-shape checks on s5/s6 verify endpoint algebra only, not the derivation chain"
+      ]
+    },
+    {
+      "unit_id": "D2",
+      "idea_id": "K2",
+      "intended_conclusion": "Same mass-energy pattern for massless scalar radiation",
+      "assumptions": ["it_a1"],
+      "definitions": [],
+      "steps": [
+        {"step_id": "t1", "items": ["it_s33", "it_s34"],
+         "depends_on": [], "required": true,
+         "status": "UNSUPPORTED", "reason": "tensor_calculus",
+         "note": "Scalar field equation (33) and stress-energy tensor (34); covariant wave operator and tensor object"},
+        {"step_id": "t2", "items": ["it_s39", "it_s40"],
+         "depends_on": ["t1"], "required": true,
+         "status": "UNSUPPORTED", "reason": "tensor_calculus",
+         "note": "Box-current divergence (39) and wall-flux vanishing (40) under reflecting boundary conditions"},
+        {"step_id": "t3", "items": ["it_e30", "it_001"],
+         "depends_on": ["t2"], "required": true,
+         "status": "SUPPORTED", "reason": null,
+         "note": "Same transformation/limit pattern as D1 s5-s6; algebraic shape only"}
+      ],
+      "source_refs": [
+        {"items": ["it_s33", "it_s34"], "pages": [8], "labels": ["(33)", "(34)"], "passage": "massless scalar field equation and stress-energy tensor"},
+        {"items": ["it_s39", "it_s40"], "pages": [9], "labels": ["(39)", "(40)"], "passage": "current divergence and wall flux condition"}
+      ],
+      "execution_obligations": ["t3"],
+      "limitations": [
+        "Steps t1-t2 require tensor calculus beyond the 7-rule baseline",
+        "Appendix C work-based route excluded from revision 1"
+      ]
+    }
+  ],
+  "items": [
+    {
+      "item_id": "it_a1", "unit_id": "D1",
+      "kind": "assumption", "label": "unlabeled-1", "latex": null,
+      "pages": [1],
+      "passage": "The only assumptions in the derivation are that the field equations hold and the energy-momentum tensor admits a universal interpretation in arbitrary coordinate systems.",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "NOT_APPLICABLE", "test_status": "NOT_RUN",
+      "math_shape": "canon", "unsupported_reason": null, "confidence": 1.0
+    },
+    {
+      "item_id": "it_a2", "unit_id": "D1",
+      "kind": "assumption", "label": "unlabeled-2", "latex": null,
+      "pages": [7],
+      "passage": "Stationary configuration: total spatial momentum of the confined radiation vanishes in the box rest frame; small-box regime |a|L/c^2 << 1 for a single assignable acceleration.",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "NOT_APPLICABLE", "test_status": "NOT_RUN",
+      "math_shape": "canon", "unsupported_reason": null, "confidence": 0.9
+    },
+    {
+      "item_id": "it_d1", "unit_id": "D1",
+      "kind": "definition", "label": "(18)",
+      "latex": "j_{a}^{lab} \\equiv -T_{ab} \\xi_{lab}^{b}",
+      "pages": [5],
+      "passage": "lab-frame energy-momentum current from the Maxwell stress-energy tensor",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "UNSUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "other_unsupported", "unsupported_reason": "tensor_calculus",
+      "confidence": 0.9
+    },
+    {
+      "item_id": "it_m4", "unit_id": "D1",
+      "kind": "equation", "label": "(4)",
+      "latex": "ds^{2} = -c^{2} dt^{2} + dx^{2} + dy^{2} + dz^{2}",
+      "pages": [4],
+      "passage": "Minkowski metric in inertial coordinates",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "UNSUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "other_unsupported", "unsupported_reason": "tensor_calculus",
+      "confidence": 0.8
+    },
+    {
+      "item_id": "it_m6", "unit_id": "D1",
+      "kind": "equation", "label": "(6)",
+      "latex": "ct = \\bar{x} \\sinh(\\tau), x = \\bar{x} \\cosh(\\tau)",
+      "pages": [4],
+      "passage": "Rindler coordinate transformations",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "UNSUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "other_unsupported", "unsupported_reason": "tensor_calculus",
+      "confidence": 0.9
+    },
+    {
+      "item_id": "it_m7", "unit_id": "D1",
+      "kind": "equation", "label": "(7)",
+      "latex": "ds^{2} = -\\bar{x}^{2} d\\tau^{2} + d\\bar{x}^{2} + dy^{2} + dz^{2}",
+      "pages": [4],
+      "passage": "flat metric in Rindler coordinates",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "UNSUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "other_unsupported", "unsupported_reason": "tensor_calculus",
+      "confidence": 0.8
+    },
+    {
+      "item_id": "it_e19", "unit_id": "D1",
+      "kind": "equation", "label": "(19)",
+      "latex": "E_{box}(\\tau) = -c^{2} \\int_{\\Sigma_{\\tau}} j_{a}^{lab} n^{a} d\\Sigma_{\\tau}",
+      "pages": [6],
+      "passage": "box energy content as hypersurface integral of the lab current",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "UNSUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "other_unsupported", "unsupported_reason": "integration",
+      "confidence": 0.9
+    },
+    {
+      "item_id": "it_e23", "unit_id": "D1",
+      "kind": "condition", "label": "(23)",
+      "latex": "\\int_{\\Sigma_{\\tau}} j_{a}^{box} \\partial_{\\bar{x}}^{a} dv^{(3)} = 0",
+      "pages": [7],
+      "passage": "vanishing total momentum stationarity condition",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "UNSUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "other_unsupported", "unsupported_reason": "tensor_calculus",
+      "confidence": 0.9
+    },
+    {
+      "item_id": "it_e24", "unit_id": "D1",
+      "kind": "equation", "label": "(24)",
+      "latex": "E_{box}(\\tau) = \\gamma(\\tau) \\int_{\\Sigma_{\\tau}} c^{2} \\bar{x}^{-2} T_{\\tau\\tau} d\\bar{x} dy dz",
+      "pages": [7],
+      "passage": "reduced energy integral after stationarity",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "UNSUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "other_unsupported", "unsupported_reason": "integration",
+      "confidence": 0.9
+    },
+    {
+      "item_id": "it_e28", "unit_id": "D1",
+      "kind": "equation", "label": "(28)",
+      "latex": "\\int_{R} \\nabla_{a} j_{box}^{a} dv^{(4)} = \\int_{\\Sigma_{2}} - \\int_{\\Sigma_{1}} = 0",
+      "pages": [8],
+      "passage": "Gauss-theorem flux argument giving hypersurface independence",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "UNSUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "other_unsupported", "unsupported_reason": "integration",
+      "confidence": 0.85
+    },
+    {
+      "item_id": "it_a28", "unit_id": "D1",
+      "kind": "lemma", "label": "(A28)/(A29)",
+      "latex": "F_{ab}(inside conductor) = 0; j_{box}^{a} N_{a}|_{walls} = 0",
+      "pages": [12, 13],
+      "passage": "perfectly conducting wall boundary results needed by the D1 flux step",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "UNSUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "other_unsupported", "unsupported_reason": "tensor_calculus",
+      "confidence": 0.85
+    },
+    {
+      "item_id": "it_e30", "unit_id": "D1",
+      "kind": "equation", "label": "(30)",
+      "latex": "E_{box}(v) = \\gamma(v) E_{box}(0)",
+      "pages": [8],
+      "passage": "E_{box}(v)=gamma(v)E_{box}(0)",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "SUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "canon", "unsupported_reason": null,
+      "confidence": 0.9
+    },
+    {
+      "item_id": "it_001", "unit_id": "D1",
+      "kind": "equation", "label": "(32)",
+      "latex": "E_{box}(0) = mc^{2}",
+      "pages": [8],
+      "passage": "E_{box}(0)=mc^{2}",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "SUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "canon", "unsupported_reason": null,
+      "confidence": 0.9
+    },
+    {
+      "item_id": "it_s33", "unit_id": "D2",
+      "kind": "equation", "label": "(33)",
+      "latex": "\\Box \\phi \\equiv g^{ab} \\nabla_{a} \\nabla_{b} \\phi = j",
+      "pages": [8],
+      "passage": "massless scalar field equation with wall source",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "UNSUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "other_unsupported", "unsupported_reason": "tensor_calculus",
+      "confidence": 0.9
+    },
+    {
+      "item_id": "it_s34", "unit_id": "D2",
+      "kind": "equation", "label": "(34)",
+      "latex": "T_{ab} = \\nabla_{a}\\phi \\nabla_{b}\\phi - (1/2) g_{ab} g^{cd} \\nabla_{c}\\phi \\nabla_{d}\\phi",
+      "pages": [8],
+      "passage": "scalar stress-energy tensor",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "UNSUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "other_unsupported", "unsupported_reason": "tensor_calculus",
+      "confidence": 0.9
+    },
+    {
+      "item_id": "it_s39", "unit_id": "D2",
+      "kind": "equation", "label": "(39)",
+      "latex": "\\nabla_{a} j_{box}^{a} = -\\bar{x}^{-1} \\sigma (u_{box}^{a} \\nabla_{a}\\phi) \\delta_{box} - T_{a\\tau} g^{ac} \\nabla_{c} \\bar{x}^{-1}",
+      "pages": [9],
+      "passage": "box-current divergence for the scalar field",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "UNSUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "other_unsupported", "unsupported_reason": "tensor_calculus",
+      "confidence": 0.85
+    },
+    {
+      "item_id": "it_s40", "unit_id": "D2",
+      "kind": "equation", "label": "(40)",
+      "latex": "j_{box}^{a} N_{a}|_{walls} = 0",
+      "pages": [9],
+      "passage": "scalar wall-flux vanishing under reflecting boundary conditions",
+      "inferred": false, "capture_status": "CAPTURED",
+      "compiler_status": "UNSUPPORTED", "test_status": "NOT_RUN",
+      "math_shape": "other_unsupported", "unsupported_reason": "tensor_calculus",
+      "confidence": 0.85
+    }
+  ],
+  "relations": [
+    {"from": "it_m6", "to": "it_m7", "rel": "derives", "required": true},
+    {"from": "it_d1", "to": "it_e19", "rel": "derives", "required": true},
+    {"from": "it_e23", "to": "it_e24", "rel": "constrains", "required": true},
+    {"from": "it_a28", "to": "it_e28", "rel": "assumes", "required": true},
+    {"from": "it_e24", "to": "it_e28", "rel": "derives", "required": true},
+    {"from": "it_e28", "to": "it_e30", "rel": "derives", "required": true},
+    {"from": "it_e30", "to": "it_001", "rel": "derives", "required": true},
+    {"from": "it_s34", "to": "it_s39", "rel": "derives", "required": true},
+    {"from": "it_s40", "to": "it_e30", "rel": "derives", "required": false}
+  ],
+  "ambiguities": [
+    {"item_id": "it_a2", "note": "Small-box single-acceleration regime stated qualitatively; exact uniformity criterion not formalized in rev1"},
+    {"item_id": "it_m4", "note": "Recorded as tensor_calculus; a purely symbolic reading is possible but loses geometric content - flagged, not resolved"}
+  ],
+  "model_provenance": {
+    "model_provenance_note": "rev1 is human-adjudicated, not model output",
+    "prompt_version": "extract_v2",
+    "extraction_version": "rev1-adjudicated",
+    "adjudicator": "human researcher",
+    "parent_digest": "29095ee6d3d943bfc4b8642b47541953e0a0a4dde3736e9d5b54b8378838cfeb",
+    "review_digest": "0d8649c3732dd8ab7f82e7254cb4e46b82a89f4e5ab2c6d109b3148f3676167e"
+  }
+}
