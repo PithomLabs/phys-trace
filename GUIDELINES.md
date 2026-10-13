@@ -273,6 +273,78 @@ Whenever implementing or reviewing a differentiation boundary:
 
 **Scope/limitations:** this lesson does not solve — it documents — the residual boundary that identical `(display, PID)` bytes under different declaring functions are indistinguishable to the check; that case is pinned as accepted behavior in `TestDifferentiateIdentityResidualLimitation`. It authorizes no PID redesign, no symbol-scope enrichment, and no body-membership requirement.
 
+## Lesson 18 — Artifact-level replay must validate the complete stored record (2026-10-13)
+
+**Observed failure:** `ReplayCoordinateDifferentiation` (`phys-math/coordexpr.go`, Plan 1.14)
+resolved the record's `DerivationRef` and returned raw `Replay` on the inner derivation
+without cross-checking the `coordinate_differentiation/1` record against it. Every
+corrupted record — substituted source, chart, result, or derivation reference, altered
+coordinate index, order, or conditions, and a constant-source wrong-variable record
+with coincident zero output — passed artifact-level replay while
+`CheckCoordinateDifferentiation` rejected each one. The weak behavior was pinned green
+by the author's own test (`coordexpr_test.go` "substituted-result"), which asserted
+that replay of a corrupted record still passes.
+
+**Underlying cause:** the implementation confused two different replay contracts.
+Replaying an isolated `Derivation` establishes only that derivation's own rule
+contract (inputs available, rule re-executes, output equal). Replaying a
+`coordinate_differentiation/1` artifact must additionally establish that the stored
+record's source, chart, coordinate index, mapping, declaring function, order,
+conditions, result, and derivation agree with the actual stored derivation, and that
+the selected coordinate and parameter binding satisfy the shared chart-binding
+invariant. The code performed the first operation under the second operation's name,
+so the API invited future curvature callers to trust a gate that verified nothing
+about the record.
+
+**Why existing tests missed it:** the test suite treated the Check-vs-Replay division
+as intended design ("Check binds the record to its derivation; Replay re-executes
+it") and asserted the weak behavior instead of challenging it. A passing test
+establishes agreement with its oracle; here the oracle itself encoded the defect
+(Lesson 2 applies to test oracles about verification boundaries, not only to physics
+goldens).
+
+**Required prevention:**
+
+1. Artifact-level replay must validate the complete stored artifact against its
+   derivation before re-executing: decode the record, resolve every referenced
+   artifact against its closed family set, verify step linkage/parameters/conditions/
+   output against the recorded selection, re-run `ValidateCoordBinding` and the
+   coordinate-selection check from stored bytes, and only then replay. Never trust
+   cached construction state; never accept a record merely because its inner
+   derivation remains independently replayable.
+2. Write validation logic once: `CheckCoordinateDifferentiation` and
+   `ReplayCoordinateDifferentiation` share one helper (`resolveAndValidateCoordDiff`)
+   with exactly one raw `Replay` per entry point. Neither wrapper calls the other, so
+   there is no checker/replay recursion and no double replay.
+3. Keep the three operations terminologically distinct in code comments, tests, and
+   reports: artifact-level `Check` (provenance gate: validate + replay),
+   artifact-level `Replay` (validate the record, then re-execute), and raw derivation
+   replay (re-executes one `Derivation`; proves nothing about any referencing record).
+4. Apply the same distinction to connection evidence: `CheckAffineConnectionShape`
+   establishes structural validity only and must never be mistaken for metric-derived
+   verification. Boundaries claiming derivation or scientific verification must take
+   explicit sources and reject a nil source; `CheckAffineConnection` with sources
+   recomputes every coefficient and requires full reference equality.
+5. When a test asserts that a corrupted artifact passes any verification entry point,
+   treat that assertion as a finding, not as documentation of intended behavior.
+
+**Required regression:** `phys-math/coordexpr_test.go:TestCoordDiffArtifactReplay`
+pins that artifact-level replay rejects substituted `ResultRef`/`SourceRef`/`ChartRef`/
+`DerivationRef`, altered `CoordIndex`/`Order`/`ConditionRefs`, and a constant-source
+wrong-variable record with coincident output — each at its intended
+identity/provenance boundary — while valid and vacuous records pass both `Check` and
+artifact `Replay`. `phys-math/levicivita_test.go:TestCheckAffineConnection` pins that
+a shape-valid connection without sources cannot pass the metric-verification path.
+
+**Scope/limitations:** this lesson does not merge `Check` and artifact `Replay` into
+one API; both remain as documented entry points sharing one implementation. It does
+not extend artifact-level replay to `TOTAL-DERIVATIVE-001` or to raw operator paths
+(`ExecuteOperator`), which stay outside the guarded chart-coordinate scope by design.
+It does not lift the identical-`(display, PID)` indistinguishability limit, the
+structural-only nature of direct `store.Put`, or the rule-registry freeze. Curvature
+code may build on the guarded path only after an independent review confirms that
+corrupted records cannot pass artifact-level replay.
+
 ## How to add new lessons
 
 Append a numbered lesson rather than overwriting historical entries. For each new incident, record:
