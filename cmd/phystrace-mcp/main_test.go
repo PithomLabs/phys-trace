@@ -24,11 +24,10 @@ func buildServerBinary(t *testing.T) string {
 	return bin
 }
 
-// TestServerToolListPinsP1Tools connects over stdio and asserts the exact
-// P1 tool surface: case_overview, inspect_evidence, repository_status —
-// and crucially no run_verification yet. The exact-set assertion keeps
-// placeholders and scope creep out of the registry.
-func TestServerToolListPinsP1Tools(t *testing.T) {
+// TestServerToolListPinsFourTools connects over stdio and asserts the
+// exact P2 tool surface. No other tools may be registered without a
+// scope decision.
+func TestServerToolListPinsFourTools(t *testing.T) {
 	bin := buildServerBinary(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
@@ -46,16 +45,13 @@ func TestServerToolListPinsP1Tools(t *testing.T) {
 	for _, tool := range res.Tools {
 		got[tool.Name] = true
 	}
-	for _, want := range []string{"case_overview", "inspect_evidence", "repository_status"} {
+	for _, want := range []string{"case_overview", "inspect_evidence", "repository_status", "run_verification"} {
 		if !got[want] {
 			t.Fatalf("tool %q missing from registry", want)
 		}
 	}
-	if len(res.Tools) != 3 {
-		t.Fatalf("registry holds %d tools, want exactly 3", len(res.Tools))
-	}
-	if got["run_verification"] {
-		t.Fatal("run_verification registered before P2")
+	if len(res.Tools) != 4 {
+		t.Fatalf("registry holds %d tools, want exactly 4", len(res.Tools))
 	}
 }
 

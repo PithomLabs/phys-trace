@@ -78,8 +78,11 @@ func TestCaseOverviewGolden(t *testing.T) {
 	if len(out.Limitations) != 2 || out.Limitations[0] != "no_x" {
 		t.Fatalf("limitations wrong: %+v", out.Limitations)
 	}
-	if out.VerifiedBy == "" {
-		t.Fatal("provenance missing")
+	if out.Provenance != inventoryProvenance {
+		t.Fatalf("provenance wrong: %q", out.Provenance)
+	}
+	if strings.Contains(out.Provenance, "verified") && !strings.Contains(out.Provenance, "coverage-audit") {
+		t.Fatal("provenance implies verification without naming the live check")
 	}
 }
 

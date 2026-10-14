@@ -40,14 +40,36 @@ func resolveWorkspace(path string) (workspace, error) {
 }
 
 // workspaceFile resolves a repo-relative path inside the workspace,
-// rejecting absolute paths and any traversal outside the root.
+// rejecting absolute paths, lexical escapes, and symlink escapes. Paths
+// are cleaned, checked lexically, then resolved with EvalSymlinks where
+// the target exists and re-checked against the resolved root: a path
+// that looks contained but traverses a symlink pointing outside is
+// rejected. Missing paths fall back to the lexical check and fail later
+// at open time; they are never followed blindly.
+//
+// Residual limitation: resolution and subsequent access are not atomic,
+// so this guard protects the intended review workflow but is not an
+// OS-level sandbox against a hostile workspace changing paths
+// concurrently (time-of-check/time-of-use).
 func (ws workspace) workspaceFile(elem ...string) (string, error) {
 	joined := filepath.Join(append([]string{ws.root}, elem...)...)
 	clean := filepath.Clean(joined)
 	if clean != ws.root && !strings.HasPrefix(clean, ws.root+string(os.PathSeparator)) {
 		return "", fmt.Errorf("phystrace-mcp: path escapes workspace: %q", filepath.Join(elem...))
 	}
-	return clean, nil
+	resolved, err := filepath.EvalSymlinks(clean)
+	if err != nil {
+		return clean, nil
+	}
+	rootResolved, err := filepath.EvalSymlinks(ws.root)
+	if err != nil {
+		return "", fmt.Errorf("phystrace-mcp: workspace root unresolvable: %w", err)
+	}
+	rel, err := filepath.Rel(rootResolved, resolved)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(os.PathSeparator)) {
+		return "", fmt.Errorf("phystrace-mcp: path escapes workspace through symlink: %q", filepath.Join(elem...))
+	}
+	return resolved, nil
 }
 
 // readWorkspaceFile reads a bounded repo-relative file.
@@ -67,14 +89,17 @@ func (ws workspace) readWorkspaceFile(elem ...string) ([]byte, error) {
 	return raw, nil
 }
 
-// Pinned demo inventory, verified by TestDerivationInventory in
-// phys-lib/bohm/minisuperspace/protocol at phys-lib v0.1.0. These are
-// declared values with stated provenance, not computed claims; the P1
-// golden test pins them so drift forces a conscious update.
+// Pinned demo inventory, declared in code and pinned by the P1 golden
+// test. These numbers are DECLARED values with stated provenance, not
+// results this tool computed: the golden test fails if they drift, and
+// live confirmation comes only from executing the coverage-audit
+// verification profile. The provenance label must never imply this tool
+// ran those checks during the current request.
 const (
 	inventoryUnits     = 12
 	inventoryArtifacts = 14
-	inventoryVerified  = "TestDerivationInventory (phys-lib/bohm/minisuperspace/protocol)"
+	// inventoryProvenance states the declared source and the live check.
+	inventoryProvenance = "declared 12 units / 14 artifacts / 3 anti-goldens per TestDerivationInventory; execute the coverage-audit profile for live confirmation"
 )
 
 var inventoryAntiGoldens = []string{
@@ -127,7 +152,7 @@ type CaseOverview struct {
 	Artifacts       int      `json:"artifacts"`
 	AntiGoldens     []string `json:"anti_goldens"`
 	Limitations     []string `json:"limitations"`
-	VerifiedBy      string   `json:"verified_by"`
+	Provenance      string   `json:"provenance"`
 }
 
 func caseOverview(ws workspace) (CaseOverview, error) {
@@ -147,7 +172,7 @@ func caseOverview(ws workspace) (CaseOverview, error) {
 		Artifacts:       inventoryArtifacts,
 		AntiGoldens:     append([]string{}, inventoryAntiGoldens...),
 		Limitations:     limits,
-		VerifiedBy:      inventoryVerified,
+		Provenance:      inventoryProvenance,
 	}, nil
 }
 
@@ -351,9 +376,9 @@ func repoStatus(ws workspace, name string) RepoStatus {
 	return st
 }
 
-// newServer builds the P1 server: exactly case_overview,
-// inspect_evidence, repository_status. run_verification arrives in P2;
-// the tool list is pinned by test so placeholders cannot sneak in.
+// newServer builds the P2 server: case_overview, inspect_evidence,
+// repository_status, run_verification. The tool list is pinned by test;
+// no other tools may be registered without a scope decision.
 func newServer(ws workspace) *mcp.Server {
 	server := mcp.NewServer(&mcp.Implementation{Name: serverName, Version: serverVersion}, nil)
 	mcp.AddTool(server, &mcp.Tool{
@@ -386,5 +411,6 @@ func newServer(ws workspace) *mcp.Server {
 		}
 		return &mcp.CallToolResult{}, out, nil
 	})
+	registerVerificationTool(server, ws)
 	return server
 }
