@@ -24,15 +24,15 @@ func buildServerBinary(t *testing.T) string {
 	return bin
 }
 
-// TestServerInitializesAndListsNoTools connects over stdio via the SDK
-// client, completing the MCP handshake, and asserts the P0 tool surface:
-// no tools registered yet. Tool behavior arrives in later phases; this
-// test pins the honest empty state so placeholders cannot sneak in.
-func TestServerInitializesAndListsNoTools(t *testing.T) {
+// TestServerToolListPinsP1Tools connects over stdio and asserts the exact
+// P1 tool surface: case_overview, inspect_evidence, repository_status —
+// and crucially no run_verification yet. The exact-set assertion keeps
+// placeholders and scope creep out of the registry.
+func TestServerToolListPinsP1Tools(t *testing.T) {
 	bin := buildServerBinary(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 	defer cancel()
-	client := mcp.NewClient(&mcp.Implementation{Name: "p0-test", Version: "0.0.0"}, nil)
+	client := mcp.NewClient(&mcp.Implementation{Name: "p1-test", Version: "0.0.0"}, nil)
 	cs, err := client.Connect(ctx, &mcp.CommandTransport{Command: exec.Command(bin)}, nil)
 	if err != nil {
 		t.Fatalf("connect: %v", err)
@@ -42,8 +42,20 @@ func TestServerInitializesAndListsNoTools(t *testing.T) {
 	if err != nil {
 		t.Fatalf("tools/list: %v", err)
 	}
-	if len(res.Tools) != 0 {
-		t.Fatalf("P0 registers %d tools, want 0", len(res.Tools))
+	got := map[string]bool{}
+	for _, tool := range res.Tools {
+		got[tool.Name] = true
+	}
+	for _, want := range []string{"case_overview", "inspect_evidence", "repository_status"} {
+		if !got[want] {
+			t.Fatalf("tool %q missing from registry", want)
+		}
+	}
+	if len(res.Tools) != 3 {
+		t.Fatalf("registry holds %d tools, want exactly 3", len(res.Tools))
+	}
+	if got["run_verification"] {
+		t.Fatal("run_verification registered before P2")
 	}
 }
 
