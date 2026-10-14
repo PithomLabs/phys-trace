@@ -38,6 +38,36 @@ GO_MIN_MINOR=25
 die() { echo "setup-antigravity: error: $*" >&2; exit 1; }
 note() { echo "setup-antigravity: $*"; }
 
+# --- Worktree ownership --------------------------------------------------
+# CREATED_WORKTREE records a phys-trace worktree this run created.
+# SETUP_OK is set only after fully successful completion. On failure or
+# interruption, the trap unregisters exactly the worktree this run owns;
+# a pre-existing worktree (CREATED_WORKTREE empty) is never touched, and
+# a successful run keeps its worktree. Plain `worktree remove` (no
+# --force) refuses when dirty, so user content is never discarded by
+# cleanup; leftovers print a manual recovery command instead.
+CREATED_WORKTREE=""
+SETUP_OK=""
+cleanup_owned_worktree() {
+	[ -n "${SRC_ROOT:-}" ] || return 0
+	[ -n "$CREATED_WORKTREE" ] || return 0
+	if git -C "$SRC_ROOT" worktree list --porcelain 2>/dev/null | grep -Fxq "worktree $CREATED_WORKTREE"; then
+		if git -C "$SRC_ROOT" worktree remove "$CREATED_WORKTREE" 2>/dev/null; then
+			note "removed owned worktree $CREATED_WORKTREE"
+		else
+			note "leaving worktree $CREATED_WORKTREE registered; remove manually: git -C '$SRC_ROOT' worktree remove '$CREATED_WORKTREE'"
+		fi
+	fi
+}
+on_exit() {
+	if [ -z "$SETUP_OK" ]; then
+		cleanup_owned_worktree
+	fi
+}
+trap 'on_exit' EXIT
+trap 'on_exit; exit 130' INT
+trap 'on_exit; exit 143' TERM
+
 WORKSPACE=""
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -76,7 +106,22 @@ case "$WS_ABS" in
 	"$SRC_ROOT"|"$SRC_ROOT"/*) die "workspace must not live inside the invoking checkout ($SRC_ROOT); pass --workspace outside it" ;;
 esac
 if [ -d "$WS_ABS" ] && [ -n "$(ls -A "$WS_ABS")" ] && [ ! -f "$WS_ABS/workspace.lock.json" ]; then
-	die "destination $WS_ABS exists, is not empty, and has no workspace.lock.json; refusing to adopt it"
+	# Adoptable partial workspace: only directories and files the script
+	# itself creates. Anything else means user data lives here; refuse
+	# with the exact recovery command rather than adopting or deleting.
+	# Adopted contents are fully re-validated below (remotes, tags, SHAs,
+	# cleanliness), so adoption relaxes no trust.
+	ADOPTABLE=1
+	while IFS= read -r entry; do
+		case "$(basename "$entry")" in
+			phys-artifact|phys-math|phys-lib|phys-trace|go.work|bin|.agents) ;;
+			*) ADOPTABLE=0; break ;;
+		esac
+	done < <(find "$WS_ABS" -mindepth 1 -maxdepth 1)
+	if [ "$ADOPTABLE" != "1" ]; then
+		die "destination $WS_ABS holds files this setup did not create; refusing to adopt it (nothing was changed). Recovery: inspect, back up what matters, then run: rm -rf '$WS_ABS'"
+	fi
+	note "adopting partial workspace (contents will be re-validated)"
 fi
 mkdir -p "$WS_ABS"
 note "workspace: $WS_ABS"
@@ -91,7 +136,11 @@ clone_or_verify() {
 	fi
 	local actual_remote
 	actual_remote="$(git -C "$dest" remote get-url origin 2>/dev/null)" || die "$name: no origin remote"
-	[ "$actual_remote" = "$remote" ] || die "$name: origin is $actual_remote, want $remote (not adopting a foreign checkout)"
+	# Normalize file:// URLs: `git clone /path` and `git clone file:///path`
+	# denote the same repository but record different strings.
+	actual_remote="${actual_remote#file://}"
+	local want_remote="${remote#file://}"
+	[ "$actual_remote" = "$want_remote" ] || die "$name: origin is $actual_remote, want $remote (not adopting a foreign checkout)"
 	local resolved
 	if ! resolved="$(git -C "$dest" rev-list -n 1 v0.1.0 2>/dev/null)"; then
 		note "$name: tag v0.1.0 missing locally, fetching tags"
@@ -121,6 +170,7 @@ if [ -e "$WS_ABS/phys-trace" ]; then
 else
 	note "creating detached phys-trace worktree at $IMPL_SHA"
 	git -C "$SRC_ROOT" worktree add --detach "$WS_ABS/phys-trace" "$IMPL_SHA" >&2 || die "worktree creation failed"
+	CREATED_WORKTREE="$WS_ABS/phys-trace"
 fi
 
 # --- 5. Workspace file ---------------------------------------------------
@@ -219,6 +269,7 @@ with open("%s/workspace.lock.json" % ws, "w") as f:
     f.write("\n")
 PYEOF
 note "lock record written"
+SETUP_OK=1
 
 # --- 10. Next steps ------------------------------------------------------------
 cat <<EOF

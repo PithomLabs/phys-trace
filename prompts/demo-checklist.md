@@ -18,7 +18,11 @@
 
 ## Review
 
-- [ ] Workspace opened in Antigravity; `phystrace` server listed.
+- [ ] Workspace opened in Antigravity 2.0.2 (version from the installer
+  desktop entry; no CLI version oracle — `--version` launches the GUI);
+  `phystrace` server listed. **Manual connection check required before
+  declaring demo readiness: automated tests cover the config file, not
+  the live client handshake.**
 - [ ] `prompts/review-durr-minisuperspace.md` submitted unchanged.
 - [ ] Agent ran an approved profile; real exit code captured.
 - [ ] Anti-goldens named with their rejection behavior.

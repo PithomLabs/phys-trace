@@ -62,14 +62,17 @@ def validate_command(command):
         raise ConfigError("server command is not executable: %s" % command)
 
 
-def ensure_server(config, name, command):
-    """Set servers[name] to the stdio entry. Returns True when changed.
+def ensure_server(config, name, command, workspace):
+    """Set servers[name] to the stdio entry with an explicit workspace
+    binding. Returns True when changed.
 
-    Everything else in the document is preserved semantically. Note the
-    document is reserialized on write, so exact original bytes/layout are
-    not preserved -- values are.
+    The entry carries args ["--workspace", <absolute workspace>] so the
+    server does not depend on the client's working directory. Everything
+    else in the document is preserved semantically. Note the document is
+    reserialized on write, so exact original bytes/layout are not
+    preserved -- values are.
     """
-    entry = {"command": command, "args": []}
+    entry = {"command": command, "args": ["--workspace", workspace]}
     if config["mcpServers"].get(name) == entry:
         return False
     config["mcpServers"][name] = entry
@@ -124,13 +127,14 @@ def main(argv):
     try:
         if not os.path.isdir(args.workspace):
             raise ConfigError("workspace is not a directory: %s" % args.workspace)
+        workspace = os.path.realpath(os.path.abspath(args.workspace))
         validate_command(args.binary)
-        path = config_path(args.workspace)
+        path = config_path(workspace)
         config = load_config(path)
-        changed = ensure_server(config, args.server_name, args.binary)
+        changed = ensure_server(config, args.server_name, args.binary, workspace)
         backup = None
         if changed:
-            changed, backup = write_config(args.workspace, config)
+            changed, backup = write_config(workspace, config)
         print(json.dumps({"config": path, "changed": changed, "backup": backup}))
         return 0
     except ConfigError as e:

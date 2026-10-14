@@ -109,10 +109,13 @@ func (w *cappedWriter) Write(p []byte) (int, error) {
 	return w.buf.Write(p)
 }
 
-// executeSpec runs one fixed spec. Startup failures are returned as
-// errors; completed processes (including test failures) are reported via
-// the result with their real exit status.
-func executeSpec(ctx context.Context, dir string, spec profileSpec) (VerificationResult, error) {
+// executeSpec runs one fixed spec. gowork, when non-empty, is set as the
+// GOWORK environment for the child after removing any inherited GOWORK
+// entry; empty means inherit the parent environment unchanged.
+// Startup failures are returned as errors; completed processes
+// (including test failures) are reported via the result with their real
+// exit status.
+func executeSpec(ctx context.Context, dir string, spec profileSpec, gowork string) (VerificationResult, error) {
 	res := VerificationResult{
 		Command: strings.Join(spec.argv, " "),
 		Dir:     dir,
@@ -126,9 +129,19 @@ func executeSpec(ctx context.Context, dir string, spec profileSpec) (Verificatio
 	cmd := exec.CommandContext(ctx, bin, spec.argv[1:]...)
 	cmd.Dir = dir
 	// Inherit the environment: the Go toolchain requires PATH, HOME,
-	// and module cache locations. Nothing is added or scrubbed; the
+	// and module cache locations. Nothing is added or scrubbed, except
+	// an explicit workspace binding (see runVerification), because the
 	// executable, arguments, and directory are fixed by the allowlist.
 	cmd.Env = os.Environ()
+	if gowork != "" {
+		env := make([]string, 0, len(cmd.Env)+1)
+		for _, kv := range cmd.Env {
+			if !strings.HasPrefix(kv, "GOWORK=") {
+				env = append(env, kv)
+			}
+		}
+		cmd.Env = append(env, "GOWORK="+gowork)
+	}
 	var stdout, stderr cappedWriter
 	stdout.cap, stderr.cap = maxVerifyBytes, maxVerifyBytes
 	cmd.Stdout, cmd.Stderr = &stdout, &stderr
@@ -150,9 +163,41 @@ func executeSpec(ctx context.Context, dir string, spec profileSpec) (Verificatio
 	return VerificationResult{}, fmt.Errorf("phystrace-mcp: startup failure: %w", err)
 }
 
+// validateWorkspaceFile ensures the workspace go.work exists and declares
+// exactly the expected demo members. Verification must never silently
+// fall back to standalone module mode: a missing or wrong workspace
+// file is a clear error, not an implicit downgrade.
+func validateWorkspaceFile(ws workspace) (string, error) {
+	raw, err := ws.readWorkspaceFile("go.work")
+	if err != nil {
+		return "", fmt.Errorf("phystrace-mcp: workspace go.work unavailable: %w", err)
+	}
+	text := string(raw)
+	for _, member := range workspaceMembers {
+		want := "\t./" + member
+		found := false
+		for _, line := range strings.Split(text, "\n") {
+			if strings.TrimRight(line, "\r") == want {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return "", fmt.Errorf("phystrace-mcp: workspace go.work lacks member ./%s", member)
+		}
+	}
+	p, err := ws.workspaceFile("go.work")
+	if err != nil {
+		return "", err
+	}
+	return p, nil
+}
+
 // runVerification maps a profile name to its fixed spec and executes it.
 // The working directory is resolved inside the workspace; profiles are
-// the only accepted input.
+// the only accepted input. Every child runs with GOWORK bound explicitly
+// to the workspace file, so an inherited GOWORK=off (or any other host
+// workspace setting) cannot silently redirect module resolution.
 func runVerification(ctx context.Context, ws workspace, profile string) (VerificationResult, error) {
 	spec, ok := profileSpecs()[profile]
 	if !ok {
@@ -162,7 +207,11 @@ func runVerification(ctx context.Context, ws workspace, profile string) (Verific
 	if err != nil {
 		return VerificationResult{}, err
 	}
-	res, err := executeSpec(ctx, dir, spec)
+	gowork, err := validateWorkspaceFile(ws)
+	if err != nil {
+		return VerificationResult{}, err
+	}
+	res, err := executeSpec(ctx, dir, spec, gowork)
 	if err != nil {
 		return VerificationResult{}, err
 	}

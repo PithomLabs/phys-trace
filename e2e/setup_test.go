@@ -281,6 +281,144 @@ func TestSetupRejectsDangerousAndNested(t *testing.T) {
 	}
 }
 
+// worktreeRegistered reports whether path is a registered worktree of repo.
+func worktreeRegistered(t *testing.T, repo, path string) bool {
+	t.Helper()
+	cmd := exec.Command("git", "-C", repo, "worktree", "list", "--porcelain")
+	out, err := cmd.Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, line := range strings.Split(string(out), "\n") {
+		if line == "worktree "+path {
+			return true
+		}
+	}
+	return false
+}
+
+func invokingRepo(t *testing.T) string {
+	t.Helper()
+	root, err := filepath.Abs(filepath.Join(filepath.Dir(scriptPath(t)), ".."))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return root
+}
+
+// TestSetupAdoptsPartialWorkspace reproduces the interrupted-setup case:
+// a workspace with only script-created entries and no lock record must
+// be adopted and completed, with everything re-validated.
+func TestSetupAdoptsPartialWorkspace(t *testing.T) {
+	env, _ := fixtureEnv(t)
+	ws, err := os.MkdirTemp("", "demo-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(ws) })
+	target := filepath.Join(ws, "phystrace-demo")
+	if err := os.MkdirAll(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// Simulate interruption after two clones: real checkouts, no lock.
+	base := strings.TrimPrefix(env[0], "PHYSTRACE_REMOTE_BASE=file://")
+	for _, name := range []string{"phys-artifact", "phys-math"} {
+		cmd := exec.Command("git", "clone", "-q", "--branch", "v0.1.0", base+"/"+name, filepath.Join(target, name))
+		if out, err := cmd.CombinedOutput(); err != nil {
+			t.Fatalf("clone: %v\n%s", err, out)
+		}
+	}
+	code, out := runScript(t, env, "--workspace", target)
+	if code != 0 {
+		t.Fatalf("partial workspace not adopted:\n%s", out)
+	}
+	if _, err := os.Stat(filepath.Join(target, "workspace.lock.json")); err != nil {
+		t.Fatal("adopted run produced no lock record")
+	}
+	invoking := invokingRepo(t)
+	t.Cleanup(func() {
+		cmd := exec.Command("git", "-C", invoking, "worktree", "remove", "--force", filepath.Join(target, "phys-trace"))
+		cmd.CombinedOutput()
+	})
+	if !worktreeRegistered(t, invoking, filepath.Join(target, "phys-trace")) {
+		t.Fatal("adopted run created no worktree")
+	}
+}
+
+// TestSetupRefusesForeignPartial proves unrelated files block adoption
+// with an exact recovery command, and are preserved untouched.
+func TestSetupRefusesForeignPartial(t *testing.T) {
+	env, _ := fixtureEnv(t)
+	ws, err := os.MkdirTemp("", "demo-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(ws) })
+	target := filepath.Join(ws, "phystrace-demo")
+	if err := os.MkdirAll(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	mine := filepath.Join(target, "my-notes.txt")
+	if err := os.WriteFile(mine, []byte("user data"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	code, out := runScript(t, env, "--workspace", target)
+	if code == 0 {
+		t.Fatal("foreign partial workspace adopted")
+	}
+	if !strings.Contains(out, "rm -rf") || !strings.Contains(out, target) {
+		t.Fatalf("no exact recovery command:\n%s", out)
+	}
+	if raw, err := os.ReadFile(mine); err != nil || string(raw) != "user data" {
+		t.Fatal("user file disturbed")
+	}
+}
+
+// TestSetupCleansOwnedWorktreeOnFailure forces a failure after worktree
+// creation (wrong go.work content) and requires the trap to unregister
+// exactly the owned worktree while leaving everything else intact.
+func TestSetupCleansOwnedWorktreeOnFailure(t *testing.T) {
+	env, _ := fixtureEnv(t)
+	ws, err := os.MkdirTemp("", "demo-*")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.RemoveAll(ws) })
+	target := filepath.Join(ws, "phystrace-demo")
+	if err := os.MkdirAll(target, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	wrong := filepath.Join(target, "go.work")
+	if err := os.WriteFile(wrong, []byte("go 1.25\n\nuse ./something-else\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	invoking := invokingRepo(t)
+	headBefore, err := exec.Command("git", "-C", invoking, "rev-parse", "HEAD").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	code, out := runScript(t, env, "--workspace", target)
+	if code == 0 {
+		t.Fatal("wrong go.work accepted")
+	}
+	if worktreeRegistered(t, invoking, filepath.Join(target, "phys-trace")) {
+		t.Fatal("failed run left its worktree registered")
+	}
+	headAfter, err := exec.Command("git", "-C", invoking, "rev-parse", "HEAD").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(headBefore) != string(headAfter) {
+		t.Fatal("invoking checkout moved")
+	}
+	if raw, err := os.ReadFile(wrong); err != nil || !strings.Contains(string(raw), "something-else") {
+		t.Fatal("pre-existing go.work disturbed")
+	}
+	if !strings.Contains(out, "go.work") {
+		t.Fatalf("failure message unhelpful:\n%s", out)
+	}
+}
+
 // TestSetupRealClones exercises actual pinned clones over the network:
 // small repos, full setup including build and smoke. Requires network;
 // the test fails honestly (no skip) when clones break.

@@ -29,20 +29,21 @@ class ConfigTest(unittest.TestCase):
 
     def test_fresh_write(self):
         config = ac.load_config(ac.config_path(self.ws))
-        self.assertTrue(ac.ensure_server(config, "phystrace", self.bin))
+        self.assertTrue(ac.ensure_server(config, "phystrace", self.bin, self.ws))
         changed, backup = ac.write_config(self.ws, config)
         self.assertTrue(changed)
         self.assertIsNone(backup)
         with open(ac.config_path(self.ws)) as f:
             data = json.load(f)
         self.assertEqual(data["mcpServers"]["phystrace"]["command"], self.bin)
+        self.assertEqual(data["mcpServers"]["phystrace"]["args"], ["--workspace", self.ws])
 
     def test_idempotent_no_backup(self):
         config = ac.load_config(ac.config_path(self.ws))
-        ac.ensure_server(config, "phystrace", self.bin)
+        ac.ensure_server(config, "phystrace", self.bin, self.ws)
         ac.write_config(self.ws, config)
         config2 = ac.load_config(ac.config_path(self.ws))
-        self.assertFalse(ac.ensure_server(config2, "phystrace", self.bin))
+        self.assertFalse(ac.ensure_server(config2, "phystrace", self.bin, self.ws))
         changed, backup = ac.write_config(self.ws, config2)
         self.assertFalse(changed)
         self.assertIsNone(backup)
@@ -54,7 +55,7 @@ class ConfigTest(unittest.TestCase):
             json.dump({"mcpServers": {"other": {"command": "/usr/bin/other"}},
                        "custom": [1, 2]}, f)
         config = ac.load_config(path)
-        self.assertTrue(ac.ensure_server(config, "phystrace", self.bin))
+        self.assertTrue(ac.ensure_server(config, "phystrace", self.bin, self.ws))
         changed, backup = ac.write_config(self.ws, config)
         self.assertTrue(changed)
         self.assertIsNotNone(backup)
@@ -102,7 +103,7 @@ class ConfigTest(unittest.TestCase):
         os.chmod(os.path.dirname(path), 0o555)
         self.addCleanup(os.chmod, os.path.dirname(path), 0o755)
         config = ac.load_config(path)
-        ac.ensure_server(config, "phystrace", self.bin)
+        ac.ensure_server(config, "phystrace", self.bin, self.ws)
         with self.assertRaises(OSError):
             ac.write_config(self.ws, config)
         with open(path) as f:

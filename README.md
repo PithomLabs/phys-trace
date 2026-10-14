@@ -47,10 +47,18 @@ bin/phystrace-mcp --workspace /path/to/phystrace-demo
 ```
 
 Stdio transport; stdout carries protocol frames only, logs go to
-stderr. Four tools, exactly: `case_overview`, `inspect_evidence`
+stderr. Startup stdout purity is pinned by an automated test; purity
+later in an active session rests on construction (single stderr logger,
+SDK-owned protocol writes) and is not independently test-pinned. Four
+tools, exactly: `case_overview`, `inspect_evidence`
 (selectors: manifest, inventory, q-relation, anti-goldens,
 covariant-fragment, limitations, file), `run_verification` (profiles
 below), `repository_status`. No shell, no writes, no other tools.
+Workspace path checks reject lexical escapes; symlink escapes are
+rejected after symlink resolution, with the residual limitation that
+resolution and file access are not atomic (time-of-check/time-of-use),
+so the guard protects the review workflow rather than serving as an
+OS-level sandbox.
 
 ## Verification profiles (`run_verification` only)
 

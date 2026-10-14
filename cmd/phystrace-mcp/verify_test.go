@@ -58,7 +58,7 @@ func TestRunVerificationRejectsUnknown(t *testing.T) {
 func TestExecutorStartupFailure(t *testing.T) {
 	ctx := context.Background()
 	spec := profileSpec{dir: []string{"."}, argv: []string{"/nonexistent-binary-xyz-123"}, timeout: 10 * time.Second}
-	if _, err := executeSpec(ctx, t.TempDir(), spec); err == nil {
+	if _, err := executeSpec(ctx, t.TempDir(), spec, ""); err == nil {
 		t.Fatal("missing executable reported success")
 	}
 }
@@ -74,7 +74,7 @@ func TestExecutorExitStatusFaithful(t *testing.T) {
 	dir := t.TempDir()
 	// Positive control.
 	okSpec := profileSpec{dir: []string{"."}, argv: []string{"go", "version"}, timeout: 30 * time.Second}
-	okRes, err := executeSpec(ctx, dir, okSpec)
+	okRes, err := executeSpec(ctx, dir, okSpec, "")
 	if err != nil {
 		t.Fatalf("go version failed: %v", err)
 	}
@@ -83,7 +83,7 @@ func TestExecutorExitStatusFaithful(t *testing.T) {
 	}
 	// Failing command: reported code must equal the directly observed code.
 	failSpec := profileSpec{dir: []string{"."}, argv: []string{"false"}, timeout: 30 * time.Second}
-	failRes, err := executeSpec(ctx, dir, failSpec)
+	failRes, err := executeSpec(ctx, dir, failSpec, "")
 	if err != nil {
 		t.Fatalf("failing command returned error instead of result: %v", err)
 	}
@@ -108,7 +108,7 @@ func TestExecutorTimeoutAndTruncation(t *testing.T) {
 	ctx := context.Background()
 	dir := t.TempDir()
 	slow := profileSpec{dir: []string{"."}, argv: []string{"sleep", "30"}, timeout: time.Second}
-	res, err := executeSpec(ctx, dir, slow)
+	res, err := executeSpec(ctx, dir, slow, "")
 	if err != nil {
 		t.Fatalf("slow command returned error instead of result: %v", err)
 	}
@@ -125,7 +125,7 @@ func TestExecutorTimeoutAndTruncation(t *testing.T) {
 		t.Fatal(err)
 	}
 	loud := profileSpec{dir: []string{"."}, argv: []string{"cat", big}, timeout: 30 * time.Second}
-	loudRes, err := executeSpec(ctx, dir, loud)
+	loudRes, err := executeSpec(ctx, dir, loud, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -165,6 +165,110 @@ func TestInspectEvidenceSymlinkEscape(t *testing.T) {
 	}
 }
 
+// TestRunVerificationIgnoresHostGoworkOff reproduces the reported B-1
+// failure: with GOWORK=off in the parent environment, an approved
+// profile must still resolve the workspace go.work. The executor binds
+// GOWORK explicitly instead of inheriting the host setting.
+func TestRunVerificationIgnoresHostGoworkOff(t *testing.T) {
+	t.Setenv("GOWORK", "off")
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "go.work"),
+		[]byte("go 1.25\n\nuse (\n\t./phys-artifact\n\t./phys-math\n\t./phys-lib\n\t./phys-trace\n)\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	lib := filepath.Join(root, "phys-lib")
+	if err := os.MkdirAll(lib, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	// The fake lib imports its fake sibling at an unpublished version,
+	// mirroring the real workspace: only workspace mode can resolve it,
+	// so inheriting GOWORK=off must fail without the executor's binding.
+	if err := os.WriteFile(filepath.Join(lib, "go.mod"), []byte("module example.com/fakelib\n\ngo 1.25\n\nrequire example.com/fakemath v0.0.0\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(lib, "fake_test.go"),
+		[]byte("package fakelib\n\nimport (\n\t\"testing\"\n\n\t\"example.com/fakemath\"\n)\n\nfunc TestFakeOK(t *testing.T) {\n\tif fakemath.Answer() != 42 {\n\t\tt.Fatal(\"wrong answer\")\n\t}\n}\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	math := filepath.Join(root, "phys-math")
+	if err := os.MkdirAll(math, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(math, "go.mod"), []byte("module example.com/fakemath\n\ngo 1.25\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(math, "fakemath.go"), []byte("package fakemath\n\nfunc Answer() int { return 42 }\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, member := range []string{"phys-artifact", "phys-trace"} {
+		if err := os.MkdirAll(filepath.Join(root, member), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(root, member, "go.mod"),
+			[]byte("module example.com/"+member+"\n\ngo 1.25\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ws, err := resolveWorkspace(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+	res, err := runVerification(ctx, ws, ProfileFullSuite)
+	if err != nil {
+		t.Fatalf("full-suite under host GOWORK=off failed: %v", err)
+	}
+	if res.ExitCode != 0 || res.TimedOut {
+		t.Fatalf("full-suite wrong outcome: %+v", res)
+	}
+}
+
+// TestValidateWorkspaceFileRejects verifies the workspace binding gate:
+// missing file, wrong members, and non-workspace roots fail clearly
+// instead of silently downgrading to standalone module mode.
+func TestValidateWorkspaceFileRejects(t *testing.T) {
+	ws := mkworkspace(t, minimalManifest)
+	if _, err := validateWorkspaceFile(ws); err == nil {
+		t.Fatal("missing go.work accepted")
+	}
+	if err := os.WriteFile(filepath.Join(ws.root, "go.work"), []byte("go 1.25\n\nuse (\n\t./phys-lib\n)\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := validateWorkspaceFile(ws); err == nil {
+		t.Fatal("three-member go.work accepted")
+	}
+}
+
+// fakeWorkspace builds a hermetic four-member workspace: a go.work with
+// the expected members, stub modules for the three non-lib members, and
+// a minimal passing phys-lib module. Mirrors the demo layout closely
+// enough for tool plumbing without depending on the developer checkout.
+func fakeWorkspace(t *testing.T) workspace {
+	t.Helper()
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "go.work"),
+		[]byte("go 1.25\n\nuse (\n\t./phys-artifact\n\t./phys-math\n\t./phys-lib\n\t./phys-trace\n)\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, member := range []string{"phys-artifact", "phys-math", "phys-trace"} {
+		dir := filepath.Join(root, member)
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, "go.mod"),
+			[]byte("module example.com/"+member+"\n\ngo 1.25\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	ws, err := resolveWorkspace(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fakePhysLibModule(t, ws)
+	return ws
+}
+
 // fakePhysLibModule builds a minimal hermetic Go module standing in for
 // phys-lib: one passing test, so verification profiles exercise real
 // `go test` plumbing without depending on the developer checkout.
@@ -187,17 +291,13 @@ func TestRunVerificationRoundTrip(t *testing.T) {
 	if _, err := exec.LookPath("go"); err != nil {
 		t.Skip("go toolchain unavailable")
 	}
-	root := t.TempDir()
-	ws, err := resolveWorkspace(root)
-	if err != nil {
-		t.Fatal(err)
-	}
+	ws := fakeWorkspace(t)
 	fakePhysLibModule(t, ws)
 	bin := buildServerBinary(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 	client := mcp.NewClient(&mcp.Implementation{Name: "p2-rt", Version: "0.0.0"}, nil)
-	cs, err := client.Connect(ctx, &mcp.CommandTransport{Command: exec.Command(bin, "--workspace", root)}, nil)
+	cs, err := client.Connect(ctx, &mcp.CommandTransport{Command: exec.Command(bin, "--workspace", ws.root)}, nil)
 	if err != nil {
 		t.Fatalf("connect: %v", err)
 	}
