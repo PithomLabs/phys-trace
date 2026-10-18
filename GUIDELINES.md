@@ -1,6 +1,6 @@
 # GUIDELINES.md — PhysTrace Lessons Learned and Engineering Casebook
 
-**Purpose:** Preserve the practical lessons learned from actual PhysTrace implementation and review work. This document complements `SKILLS.md`: `AGENTS.md` describes the governing mission and general engineering principles; `GUIDELINES.md` records concrete failure modes, why they occurred, and the prevention mechanisms future agents must apply.
+**Purpose:** Preserve the practical lessons learned from actual PhysTrace implementation and review work. This document complements `AGENTS.md` which describes the governing mission and general engineering principles; `GUIDELINES.md` records concrete failure modes, why they occurred, and the prevention mechanisms future agents must apply.
 
 **Scope:** Applies across PhysMath, PhysLib, PhysTrace protocols, PhysArtifact, manifests, fixtures, tests, and future physics domains.
 
